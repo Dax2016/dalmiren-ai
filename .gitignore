@@ -1,0 +1,86 @@
+﻿# ==========================================
+# DALMIREN AI — Repository Protection
+# ==========================================
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Databases and database journals
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+
+# Backups — every directory level
+backups/
+**/backups/
+
+# Python virtual environments and generated files
+.venv/
+venv/
+env/
+**/.venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Android Studio and Gradle generated files
+.gradle/
+**/.gradle/
+.idea/
+**/.idea/
+.kotlin/
+**/.kotlin/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+**/local.properties
+*.iml
+
+# Android build outputs
+*.apk
+*.aab
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Signing keys, certificates and private keys
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Editor and IDE temporary files
+.vscode/
+*.swp
+*.swo
+
+# Standalone backup files
+*.backup-*
+*.bak
+*-pre-runner-fix-*
+
+# Local Android Studio discovery diagnostics
+/dalmiren-module-discovery.txt
