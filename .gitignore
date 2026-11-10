@@ -84,3 +84,13 @@ desktop.ini
 
 # Local Android Studio discovery diagnostics
 /dalmiren-module-discovery.txt
+
+# DALMIREN Google Play credentials
+backend/.env
+backend/.env.backup-*
+backend/secrets/
+backend/*service-account*.json
+backend/*credentials*.json
+
+# Standalone pre-change snapshots
+*.before-*

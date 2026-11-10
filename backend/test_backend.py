@@ -11,9 +11,10 @@ from services.health_monitor import HealthMonitor
 from services.routing_engine import RoutingPolicyEngine, TaskIntent
 from services.memory_nexus import MemoryNexus
 from models.db_models import ParentingGoal, FollowUpRecord, ConsentRecord
+from models.db_models import Memory, MemoryAuditEvent
 from prompts.prompt_registry import PromptRegistry
 from services.intelligence_loops import IntelligenceLoopsService
-from models.db_models import User
+from models.db_models import User, ChildProfile
 
 class MockProvider:
     def __init__(self, name):
@@ -29,6 +30,104 @@ class MockProvider:
         return AIProviderResponse(text="Mock response", provider_name=self._name, model_name="mock-model", latency_ms=10.0)
     async def generate_structured_output(self, req, schema):
         return {"response_summary": "Mock summary"}
+
+class MemoryIsolationTests(unittest.TestCase):
+
+    def setUp(self):
+        self.db = SessionLocal()
+        self.user_id = "memory_isolation_test_parent"
+
+        self.child_a = ChildProfile(
+            user_id=self.user_id,
+            name="Isolation Test Child A",
+            age_group="TODDLER"
+        )
+
+        self.child_b = ChildProfile(
+            user_id=self.user_id,
+            name="Isolation Test Child B",
+            age_group="SCHOOL_AGE"
+        )
+
+        self.db.add_all([self.child_a, self.child_b])
+        self.db.commit()
+
+        self.db.refresh(self.child_a)
+        self.db.refresh(self.child_b)
+
+        self.nexus = MemoryNexus(self.db)
+
+        self.nexus.create_memory(
+            user_id=self.user_id,
+            content="Shared parent-level family routine.",
+            category="FAMILY"
+        )
+
+        self.nexus.create_memory(
+            user_id=self.user_id,
+            child_id=self.child_a.id,
+            content="PRIVATE CHILD A: loves drawing.",
+            category="PREFERENCE"
+        )
+
+        self.nexus.create_memory(
+            user_id=self.user_id,
+            child_id=self.child_b.id,
+            content="PRIVATE CHILD B: loves football.",
+            category="PREFERENCE"
+        )
+
+    def tearDown(self):
+        self.db.query(MemoryAuditEvent).filter(
+            MemoryAuditEvent.user_id == self.user_id
+        ).delete(synchronize_session=False)
+
+        self.db.query(Memory).filter(
+            Memory.user_id == self.user_id
+        ).delete(synchronize_session=False)
+
+        self.db.query(ChildProfile).filter(
+            ChildProfile.user_id == self.user_id
+        ).delete(synchronize_session=False)
+
+        self.db.commit()
+        self.db.close()
+
+    def test_parent_level_context_excludes_all_child_memories(self):
+        memories = self.nexus.retrieve_active_memories(
+            self.user_id,
+            child_id=None
+        )
+
+        contents = [memory.content for memory in memories]
+
+        self.assertIn("Shared parent-level family routine.", contents)
+        self.assertNotIn("PRIVATE CHILD A: loves drawing.", contents)
+        self.assertNotIn("PRIVATE CHILD B: loves football.", contents)
+
+    def test_child_a_context_excludes_child_b_memories(self):
+        memories = self.nexus.retrieve_active_memories(
+            self.user_id,
+            child_id=self.child_a.id
+        )
+
+        contents = [memory.content for memory in memories]
+
+        self.assertIn("Shared parent-level family routine.", contents)
+        self.assertIn("PRIVATE CHILD A: loves drawing.", contents)
+        self.assertNotIn("PRIVATE CHILD B: loves football.", contents)
+
+    def test_child_b_context_excludes_child_a_memories(self):
+        memories = self.nexus.retrieve_active_memories(
+            self.user_id,
+            child_id=self.child_b.id
+        )
+
+        contents = [memory.content for memory in memories]
+
+        self.assertIn("Shared parent-level family routine.", contents)
+        self.assertIn("PRIVATE CHILD B: loves football.", contents)
+        self.assertNotIn("PRIVATE CHILD A: loves drawing.", contents)
 
 class BackendTestCase(unittest.TestCase):
     @classmethod

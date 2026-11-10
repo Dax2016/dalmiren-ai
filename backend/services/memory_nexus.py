@@ -19,6 +19,8 @@ class MemoryNexus:
         )
         if child_id:
             query = query.filter((Memory.child_id == child_id) | (Memory.child_id.is_(None)))
+        else:
+            query = query.filter(Memory.child_id.is_(None))
         return query.order_by(Memory.updated_at.desc()).limit(limit).all()
 
     def get_memory_context_strings(

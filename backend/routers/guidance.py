@@ -62,6 +62,15 @@ class GuidanceResponse(BaseModel):
     calm_response: str
     next_observations: List[str]
     practical_tip: str
+    understanding: str = ""
+    contributing_factors: List[str] = Field(default_factory=list)
+    developmental_context: str = ""
+    practical_steps: List[str] = Field(default_factory=list)
+    communication_scripts: List[str] = Field(default_factory=list)
+    prevention_strategies: List[str] = Field(default_factory=list)
+    what_to_avoid: List[str] = Field(default_factory=list)
+    follow_up_plan: List[str] = Field(default_factory=list)
+    professional_support_guidance: str = ""
     disclaimer: str = "Guidance provided by DALMIREN AI specialist agent. Not a medical or psychological diagnosis."
 
 
@@ -141,12 +150,25 @@ async def run_specialist_agent(
           "Do not include markdown fences or additional text:\n"
           "{"
           '"title":"string",'
+          '"understanding":"string",'
           '"hypotheses":["string"],'
+          '"contributing_factors":["string"],'
           '"emotional_needs":["string"],'
+          '"developmental_context":"string",'
           '"calm_response":"string",'
+          '"practical_steps":["string"],'
+          '"communication_scripts":["string"],'
           '"next_observations":["string"],'
+          '"prevention_strategies":["string"],'
+          '"what_to_avoid":["string"],'
+          '"follow_up_plan":["string"],'
+          '"professional_support_guidance":"string",'
           '"practical_tip":"string"'
-          "}"
+          "}\n\n"
+        + "Distinguish reported facts from hypotheses; explain why each approach may help; "
+          "adapt to the stated developmental stage; provide specific practical steps and "
+          "natural example phrases; include prevention and follow-up; avoid diagnosis, "
+          "blame, punishment and unsupported assumptions. State uncertainty when context is limited."
     )
 
     prompt_content = (
@@ -214,10 +236,26 @@ async def run_specialist_agent(
             data.get("practical_tip") or "Focus on connection before correction."
         )
 
+        understanding = str(data.get("understanding") or "")
+        contributing_factors = data.get("contributing_factors") or []
+        developmental_context = str(data.get("developmental_context") or "")
+        practical_steps = data.get("practical_steps") or []
+        communication_scripts = data.get("communication_scripts") or []
+        prevention_strategies = data.get("prevention_strategies") or []
+        what_to_avoid = data.get("what_to_avoid") or []
+        follow_up_plan = data.get("follow_up_plan") or []
+        professional_support_guidance = str(data.get("professional_support_guidance") or "")
+
         for field_name, field_value in (
             ("hypotheses", hypotheses),
             ("emotional_needs", emotional_needs),
-            ("next_observations", next_observations)
+            ("next_observations", next_observations),
+            ("contributing_factors", contributing_factors),
+            ("practical_steps", practical_steps),
+            ("communication_scripts", communication_scripts),
+            ("prevention_strategies", prevention_strategies),
+            ("what_to_avoid", what_to_avoid),
+            ("follow_up_plan", follow_up_plan)
         ):
             if not isinstance(field_value, list) or not all(
                 isinstance(item, str) for item in field_value
@@ -289,7 +327,16 @@ async def run_specialist_agent(
         emotional_needs=emotional_needs,
         calm_response=calm_response,
         next_observations=next_observations,
-        practical_tip=practical_tip
+        practical_tip=practical_tip,
+        understanding=understanding,
+        contributing_factors=contributing_factors,
+        developmental_context=developmental_context,
+        practical_steps=practical_steps,
+        communication_scripts=communication_scripts,
+        prevention_strategies=prevention_strategies,
+        what_to_avoid=what_to_avoid,
+        follow_up_plan=follow_up_plan,
+        professional_support_guidance=professional_support_guidance
     )
 
 

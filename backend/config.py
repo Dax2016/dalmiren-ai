@@ -1,5 +1,6 @@
 import os
-from pydantic_settings import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
@@ -28,12 +29,18 @@ class Settings(BaseSettings):
     AUTH_ACCESS_TOKEN_MINUTES: int = 15
     AUTH_REFRESH_TOKEN_DAYS: int = 30
 
+    # Google Play Billing Settings
+    GOOGLE_PLAY_PACKAGE_NAME: str = "com.darchums.dalmiren"
+    GOOGLE_PLAY_SERVICE_ACCOUNT_FILE: str = ""
+    GOOGLE_PLAY_APPLICATION_NAME: str = "DALMIREN AI"
+    GOOGLE_PLAY_ACCOUNT_BINDING_SECRET: str = ""
     # Health Check Interval
     HEALTH_CHECK_INTERVAL_SECONDS: int = 30
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=str(Path(__file__).resolve().parent / ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 settings = Settings()

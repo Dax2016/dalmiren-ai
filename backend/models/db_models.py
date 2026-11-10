@@ -161,3 +161,53 @@ class RefreshToken(Base):
     created_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
     revoked_at = Column(BigInteger, nullable=True)
     replaced_by_hash = Column(String(64), nullable=True)
+
+class UserSubscription(Base):
+    """Server-verified Google Play subscription for one DALMIREN account."""
+    __tablename__ = "user_subscriptions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    platform = Column(String(30), nullable=False, default="GOOGLE_PLAY")
+    product_id = Column(String(150), nullable=False)
+    base_plan_id = Column(String(100), nullable=False)
+    purchase_token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    order_id = Column(String(255), nullable=True, index=True)
+    status = Column(String(40), nullable=False, default="PENDING")
+    started_at = Column(BigInteger, nullable=True)
+    expires_at = Column(BigInteger, nullable=True, index=True)
+    trial_started_at = Column(BigInteger, nullable=True)
+    trial_ends_at = Column(BigInteger, nullable=True)
+    auto_renew_enabled = Column(Boolean, nullable=False, default=False)
+    acknowledged = Column(Boolean, nullable=False, default=False)
+    last_verified_at = Column(BigInteger, nullable=True)
+    created_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
+    updated_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
+
+
+class UserEntitlement(Base):
+    """Effective access level calculated by the backend, never trusted from a client."""
+    __tablename__ = "user_entitlements"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    tier = Column(String(30), nullable=False, default="FREE")
+    status = Column(String(40), nullable=False, default="ACTIVE")
+    source = Column(String(40), nullable=False, default="DEFAULT")
+    valid_until = Column(BigInteger, nullable=True)
+    updated_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
+
+
+class PlayPurchaseEvent(Base):
+    """Idempotency and processing record for Google Play subscription notifications."""
+    __tablename__ = "play_purchase_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    event_id = Column(String(255), nullable=False, unique=True, index=True)
+    event_type = Column(String(100), nullable=False)
+    purchase_token_hash = Column(String(64), nullable=True, index=True)
+    payload_hash = Column(String(64), nullable=False)
+    processing_status = Column(String(30), nullable=False, default="RECEIVED")
+    received_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
+    processed_at = Column(BigInteger, nullable=True)
+    error_detail = Column(Text, nullable=True)
