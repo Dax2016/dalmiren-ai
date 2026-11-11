@@ -8,7 +8,7 @@ from providers.local_ai import LocalAIProvider
 from providers.openai_provider import OpenAIProvider
 from services.health_monitor import HealthMonitor
 from services.routing_engine import RoutingPolicyEngine
-from routers import chat, guidance, profiles, memories, goals, consent, auth, subscriptions
+from routers import chat, guidance, profiles, memories, goals, consent, auth, subscriptions, parenting_plans
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DALMIREN-Backend")
@@ -69,3 +69,4 @@ app.include_router(goals.router)
 app.include_router(consent.router)
 app.include_router(auth.router)
 app.include_router(subscriptions.router)
+app.include_router(parenting_plans.router)

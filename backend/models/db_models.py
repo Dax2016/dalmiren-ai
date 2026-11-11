@@ -1,6 +1,6 @@
 import time
 import uuid
-from sqlalchemy import Column, String, Integer, Float, Boolean, Text, ForeignKey, BigInteger
+from sqlalchemy import Column, String, Integer, Float, Boolean, Text, ForeignKey, BigInteger, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -211,3 +211,18 @@ class PlayPurchaseEvent(Base):
     received_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
     processed_at = Column(BigInteger, nullable=True)
     error_detail = Column(Text, nullable=True)
+
+class ParentingPlan(Base):
+    """A complete parenting plan owned by one parent account."""
+    __tablename__ = "parenting_plans"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    child_id = Column(String(36), ForeignKey("child_profiles.id", ondelete="SET NULL"), nullable=True, index=True)
+    title = Column(String(255), nullable=False)
+    summary = Column(Text, nullable=True)
+    status = Column(String(30), nullable=False, default="DRAFT", index=True)
+    plan_data = Column(JSON, nullable=False, default=dict)
+    progress_entries = Column(JSON, nullable=False, default=list)
+    created_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000))
+    updated_at = Column(BigInteger, nullable=False, default=lambda: int(time.time() * 1000), onupdate=lambda: int(time.time() * 1000))
