@@ -8,7 +8,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models.db_models import User
+from models.db_models import (
+    User, FamilyProfile, ChildProfile, Conversation, Message, Memory,
+    ParentingGoal, GuidanceSession, FollowUpRecord, MemoryAuditEvent,
+    ConsentRecord, RefreshToken, UserSubscription, UserEntitlement,
+    PlayPurchaseEvent, ParentingPlan,
+)
 from services.auth_service import (
     InvalidRefreshTokenError,
     create_access_token,
@@ -41,6 +46,11 @@ class RefreshRequest(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str = Field(min_length=20, max_length=512)
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=1024)
+    confirmation: str = Field(min_length=1, max_length=50)
 
 
 def _normalize_email(email: str) -> str:
@@ -217,6 +227,136 @@ def logout(
         )
         db.commit()
         return {"message": "Signed out successfully."}
+    except Exception:
+        db.rollback()
+        raise
+
+
+@router.post("/delete-account")
+def delete_account(
+    payload: DeleteAccountRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if payload.confirmation != "DELETE MY ACCOUNT":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Type "DELETE MY ACCOUNT" exactly to confirm account deletion.',
+        )
+
+    if not current_user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This account has no password credential. Contact support to complete verified account deletion.",
+        )
+
+    if not verify_password(payload.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="The password is incorrect.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = current_user.id
+
+    try:
+        conversation_ids = [
+            row[0] for row in db.query(Conversation.id).filter(
+                Conversation.user_id == user_id
+            ).all()
+        ]
+        subscription_token_hashes = [
+            row[0] for row in db.query(UserSubscription.purchase_token_hash).filter(
+                UserSubscription.user_id == user_id
+            ).all()
+        ]
+
+        # Remove conversation content before its owning conversations.
+        if conversation_ids:
+            db.query(Message).filter(
+                Message.conversation_id.in_(conversation_ids)
+            ).delete(synchronize_session=False)
+
+        db.query(Conversation).filter(
+            Conversation.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        # Remove dependent progress records before parenting goals.
+        db.query(FollowUpRecord).filter(
+            FollowUpRecord.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(ParentingGoal).filter(
+            ParentingGoal.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        # Remove all remaining parent- and child-linked personal records.
+        db.query(ParentingPlan).filter(
+            ParentingPlan.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(GuidanceSession).filter(
+            GuidanceSession.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(MemoryAuditEvent).filter(
+            MemoryAuditEvent.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(Memory).filter(
+            Memory.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(ConsentRecord).filter(
+            ConsentRecord.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(FamilyProfile).filter(
+            FamilyProfile.parent_id == user_id
+        ).delete(synchronize_session=False)
+
+        # Remove the account's subscription association and entitlement.
+        # Google Play billing itself is not cancelled by deleting this account.
+        if subscription_token_hashes:
+            db.query(PlayPurchaseEvent).filter(
+                PlayPurchaseEvent.purchase_token_hash.in_(subscription_token_hashes)
+            ).update(
+                {
+                    PlayPurchaseEvent.purchase_token_hash: None,
+                },
+                synchronize_session=False,
+            )
+
+        db.query(UserSubscription).filter(
+            UserSubscription.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(UserEntitlement).filter(
+            UserEntitlement.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(RefreshToken).filter(
+            RefreshToken.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        # Child profiles are deleted only after every child-linked record.
+        db.query(ChildProfile).filter(
+            ChildProfile.user_id == user_id
+        ).delete(synchronize_session=False)
+
+        db.query(User).filter(
+            User.id == user_id
+        ).delete(synchronize_session=False)
+
+        db.commit()
+
+        return {
+            "message": "The account and associated personal data have been deleted.",
+            "subscription_notice": (
+                "Any Google Play subscription must be cancelled separately "
+                "in Google Play."
+            ),
+        }
     except Exception:
         db.rollback()
         raise
