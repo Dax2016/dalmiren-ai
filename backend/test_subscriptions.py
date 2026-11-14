@@ -62,7 +62,7 @@ class SubscriptionIntegrationTests(unittest.TestCase):
         self.assertEqual(data["trial_days"], 0)
         self.assertEqual(
             [plan["base_plan_id"] for plan in data["plans"]],
-            ["plus-monthly"],
+            ["plus-weekly", "plus-monthly", "plus-annual-v1"],
         )
 
     def test_free_account_gets_all_six_modules_and_safety_support(self):

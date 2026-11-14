@@ -62,8 +62,18 @@ def get_subscription_catalog():
         "trial_days": 0,
         "plans": [
             {
+                "base_plan_id": "plus-weekly",
+                "billing_period": "P1W",
+                "trial_available": False,
+            },
+            {
                 "base_plan_id": "plus-monthly",
                 "billing_period": "P1M",
+                "trial_available": False,
+            },
+            {
+                "base_plan_id": "plus-annual-v1",
+                "billing_period": "P1Y",
                 "trial_available": False,
             },
         ],

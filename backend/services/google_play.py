@@ -14,7 +14,7 @@ GOOGLE_PLAY_SCOPE = "https://www.googleapis.com/auth/androidpublisher"
 GOOGLE_PLAY_API = "https://androidpublisher.googleapis.com/androidpublisher/v3"
 
 SUPPORTED_PRODUCT_ID = "dalmiren_plus"
-SUPPORTED_BASE_PLANS = {"plus-monthly"}
+SUPPORTED_BASE_PLANS = {"plus-weekly", "plus-monthly", "plus-annual-v1"}
 
 
 class GooglePlayVerificationError(Exception):
