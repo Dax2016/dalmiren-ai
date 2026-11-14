@@ -53,16 +53,16 @@ class SubscriptionIntegrationTests(unittest.TestCase):
             self.client.close()
             self.db.close()
 
-    def test_catalog_exposes_monthly_annual_and_seven_day_trial(self):
+    def test_catalog_exposes_confirmed_monthly_plan_without_trial(self):
         response = self.client.get("/api/subscriptions/catalog")
 
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data["product_id"], "dalmiren_premium")
-        self.assertEqual(data["trial_days"], 7)
+        self.assertEqual(data["product_id"], "dalmiren_plus")
+        self.assertEqual(data["trial_days"], 0)
         self.assertEqual(
             [plan["base_plan_id"] for plan in data["plans"]],
-            ["premium_monthly", "premium_annual"],
+            ["plus-monthly"],
         )
 
     def test_free_account_gets_all_six_modules_and_safety_support(self):
@@ -101,8 +101,8 @@ class SubscriptionIntegrationTests(unittest.TestCase):
     def test_google_verified_purchase_activates_premium(self, verify):
         expiry = int(time.time() * 1000) + 30 * 24 * 60 * 60 * 1000
         verify.return_value = {
-            "product_id": "dalmiren_premium",
-            "base_plan_id": "premium_monthly",
+            "product_id": "dalmiren_plus",
+            "base_plan_id": "plus-monthly",
             "status": "ACTIVE",
             "expires_at": expiry,
             "started_at": int(time.time() * 1000),
@@ -136,16 +136,16 @@ class SubscriptionIntegrationTests(unittest.TestCase):
         self.db.add(UserSubscription(
             user_id=self.other_parent.id,
             platform="GOOGLE_PLAY",
-            product_id="dalmiren_premium",
-            base_plan_id="premium_monthly",
+            product_id="dalmiren_plus",
+            base_plan_id="plus-monthly",
             purchase_token_hash=token_hash,
             status="ACTIVE",
         ))
         self.db.commit()
 
         verify.return_value = {
-            "product_id": "dalmiren_premium",
-            "base_plan_id": "premium_monthly",
+            "product_id": "dalmiren_plus",
+            "base_plan_id": "plus-monthly",
             "status": "ACTIVE",
             "expires_at": int(time.time() * 1000) + 86_400_000,
             "started_at": int(time.time() * 1000),
@@ -174,8 +174,8 @@ class SubscriptionIntegrationTests(unittest.TestCase):
     ):
         expiry = int(time.time() * 1000) + 30 * 24 * 60 * 60 * 1000
         verify.return_value = {
-            "product_id": "dalmiren_premium",
-            "base_plan_id": "premium_monthly",
+            "product_id": "dalmiren_plus",
+            "base_plan_id": "plus-monthly",
             "status": "ACTIVE",
             "expires_at": expiry,
             "started_at": int(time.time() * 1000),
@@ -228,8 +228,8 @@ class SubscriptionIntegrationTests(unittest.TestCase):
     @patch("routers.subscriptions.verify_subscription_purchase")
     def test_mismatched_google_account_id_is_rejected(self, verify, acknowledge):
         verify.return_value = {
-            "product_id": "dalmiren_premium",
-            "base_plan_id": "premium_monthly",
+            "product_id": "dalmiren_plus",
+            "base_plan_id": "plus-monthly",
             "status": "ACTIVE",
             "expires_at": int(time.time() * 1000) + 86_400_000,
             "started_at": int(time.time() * 1000),
@@ -256,8 +256,8 @@ class SubscriptionIntegrationTests(unittest.TestCase):
     @patch("routers.subscriptions.verify_subscription_purchase")
     def test_missing_google_account_id_is_rejected(self, verify, acknowledge):
         verify.return_value = {
-            "product_id": "dalmiren_premium",
-            "base_plan_id": "premium_monthly",
+            "product_id": "dalmiren_plus",
+            "base_plan_id": "plus-monthly",
             "status": "ACTIVE",
             "expires_at": int(time.time() * 1000) + 86_400_000,
             "started_at": int(time.time() * 1000),

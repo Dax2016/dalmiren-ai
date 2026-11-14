@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 import hmac
 import time
 from datetime import datetime
@@ -13,8 +13,8 @@ from config import settings
 GOOGLE_PLAY_SCOPE = "https://www.googleapis.com/auth/androidpublisher"
 GOOGLE_PLAY_API = "https://androidpublisher.googleapis.com/androidpublisher/v3"
 
-SUPPORTED_PRODUCT_ID = "dalmiren_premium"
-SUPPORTED_BASE_PLANS = {"premium_monthly", "premium_annual"}
+SUPPORTED_PRODUCT_ID = "dalmiren_plus"
+SUPPORTED_BASE_PLANS = {"plus-monthly"}
 
 
 class GooglePlayVerificationError(Exception):

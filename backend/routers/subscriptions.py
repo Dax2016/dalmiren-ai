@@ -19,7 +19,7 @@ from services.google_play import (
 
 router = APIRouter(prefix="/api/subscriptions", tags=["Subscriptions"])
 
-PREMIUM_PRODUCT_ID = "dalmiren_premium"
+PREMIUM_PRODUCT_ID = "dalmiren_plus"
 class PurchaseVerificationRequest(BaseModel):
     purchase_token: str = Field(min_length=20, max_length=4096)
 
@@ -59,17 +59,12 @@ def get_subscription_catalog():
     return {
         "currency_source": "GOOGLE_PLAY_LOCALIZED_PRICING",
         "product_id": PREMIUM_PRODUCT_ID,
-        "trial_days": 7,
+        "trial_days": 0,
         "plans": [
             {
-                "base_plan_id": "premium_monthly",
+                "base_plan_id": "plus-monthly",
                 "billing_period": "P1M",
-                "trial_available": True,
-            },
-            {
-                "base_plan_id": "premium_annual",
-                "billing_period": "P1Y",
-                "trial_available": True,
+                "trial_available": False,
             },
         ],
         "note": "Prices and trial eligibility are supplied by Google Play Billing.",
